@@ -1,7 +1,6 @@
 import contextlib
 import io
 import json
-import math
 from pathlib import Path
 import subprocess
 import sys
@@ -15,7 +14,7 @@ from iface import api
 from iface.cli import main, menu
 from iface.files import archive_outputs, fingerprint
 from iface.formats import Poscar
-from iface.neb import minimum_image
+from iface.geometry import minimum_image
 from iface.scheduler import submit
 
 
@@ -40,11 +39,9 @@ class Workflows(unittest.TestCase):
         api.prepare(self.poscar, target, preset=preset, potcar_root=self.library, scheduler=scheduler)
         return target
 
-    def outcar(self, directory, energy=-4, finished=True, frequencies=()):
+    def outcar(self, directory, energy=-4, finished=True):
         text = f" free  energy   TOTEN  = {energy} eV\n"
         text += " POSITION                                       TOTAL-FORCE (eV/Angst)\n ---\n 0 0 0 0.03 0.04 0\n ---\n"
-        for i, (value, imaginary) in enumerate(frequencies, 1):
-            text += f" {i} {'f/i' if imaginary else 'f'} = {value} THz\n"
         if finished:
             text += " General timing and accounting informations for this job:\n"
         (directory / "OUTCAR").write_text(text)
@@ -178,24 +175,6 @@ class Workflows(unittest.TestCase):
         with self.assertRaises(ValueError):
             archive_outputs(target, apply=True)
 
-    def test_neb_shortest_path_and_manifest(self):
-        source = self.prepared()
-        final = self.root / "final"
-        final.write_text(POSCAR.replace("0.9 0 0", "0.1 0 0"))
-        output = self.root / "neb"
-        api.prepare_neb(self.poscar, final, source, output, images=1)
-        midpoint = Poscar.read(output / "01" / "POSCAR")
-        self.assertAlmostEqual(midpoint.fractional[0, 0], 1.0)
-        self.assertTrue(api.preflight(output)["ok"])
-        self.assertNotIn("LCLIMB", api.read_incar(output / "INCAR"))
-
-    def test_neb_incompatible_cells_rejected(self):
-        source = self.prepared()
-        final = self.root / "final"
-        final.write_text(POSCAR.replace("4 0 0", "5 0 0"))
-        with self.assertRaises(ValueError):
-            api.prepare_neb(self.poscar, final, source, self.root / "neb")
-
     def test_skewed_minimum_image_matches_exhaustive_search(self):
         import itertools
         cell = np.array([[3, 0, 0], [2.7, 0.8, 0], [0.2, 0.2, 4]])
@@ -204,31 +183,6 @@ class Workflows(unittest.TestCase):
         brute = min(np.linalg.norm((delta[0] - np.array(shift)) @ cell)
                     for shift in itertools.product(range(-4, 5), repeat=3))
         self.assertAlmostEqual(np.linalg.norm(exact[0] @ cell), brute)
-
-    def test_neb_missing_endpoint_energy_is_unknown(self):
-        root = self.root / "neb"
-        for name in ("00", "01", "02"):
-            (root / name).mkdir(parents=True)
-        self.outcar(root / "01", energy=-2)
-        self.assertIsNone(api.neb_report(root)["forward_barrier_ev"])
-        self.outcar(root / "00", energy=-4)
-        self.outcar(root / "02", energy=-3)
-        report = api.neb_report(root)
-        self.assertEqual(report["forward_barrier_ev"], 2)
-        self.assertEqual(report["reverse_barrier_ev"], 1)
-
-    def test_vibration_indices_and_vineyard_prefactor(self):
-        source = self.prepared()
-        output = self.root / "vibration"
-        api.prepare_vibration(self.poscar, source, output, [1])
-        self.assertEqual(api.read_incar(output / "INCAR")["IBRION"], "5")
-        self.outcar(source, frequencies=[(2, False), (3, False), (4, False)])
-        self.outcar(output, frequencies=[(2, False), (6, False), (1, True)])
-        result = api.effective_frequency(source, output)
-        self.assertAlmostEqual(result["effective_frequency_thz"], 2)
-        self.outcar(output, frequencies=[(2, True), (6, False), (1, True)])
-        with self.assertRaises(ValueError):
-            api.effective_frequency(source, output)
 
     def test_result_force_and_finished_not_converged(self):
         target = self.prepared()
@@ -239,6 +193,21 @@ class Workflows(unittest.TestCase):
         self.assertTrue(report["finished"])
         self.assertFalse(report["ionic_converged"])
         self.assertEqual(report["electronic_convergence"], "not_assessed")
+
+    def test_relaxed_displacement_handles_periodic_boundary(self):
+        target = self.prepared()
+        (target / "CONTCAR").write_text(POSCAR.replace("0.9 0 0", "0.1 0 0"))
+        report = api.inspect_calculation(target)
+        self.assertAlmostEqual(report["max_displacement_a"], 0.8)
+
+    def test_surface_energy_cli_uses_slab_and_bulk_reference(self):
+        target = self.prepared()
+        self.outcar(target, energy=-4)
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            code = main(["structure", "surface-energy", str(target), "--bulk-energy-per-atom", "-5"])
+        self.assertEqual(code, 0)
+        self.assertAlmostEqual(json.loads(stream.getvalue())["gamma_ev_a2"], 1 / 32)
 
     def test_sweep_and_energy_per_atom(self):
         source = self.prepared()
@@ -284,10 +253,20 @@ class Workflows(unittest.TestCase):
             self.assertEqual(main(["os", "check", str(self.root / "missing")]), 2)
 
     def test_menu_navigation(self):
-        with patch("builtins.input", side_effect=["1", "4", str(self.root / "KPOINTS"), "--mesh 4x4x1", "0"]), contextlib.redirect_stdout(io.StringIO()) as output:
+        with patch("builtins.input", side_effect=["2", "4", str(self.root / "KPOINTS"), "--mesh 4x4x1", "0"]), contextlib.redirect_stdout(io.StringIO()) as output:
             self.assertEqual(menu(), 0)
-        self.assertIn("Optimization and static", output.getvalue())
+        self.assertIn("VASP inputs and results", output.getvalue())
         self.assertIn("4 4 1", (self.root / "KPOINTS").read_text())
+
+    def test_menu_prompts_for_required_surface_bulk_reference(self):
+        directory = str(self.root / "slab result")
+        with patch("builtins.input", side_effect=["1", "6", directory, "-5", "", "0"]) as prompts, \
+                patch("iface.api.surface_energy", return_value={"gamma_ev_a2": 0.03125}) as calculate, \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(menu(), 0)
+        calculate.assert_called_once_with(directory=directory, bulk_energy_per_atom=-5.0, surfaces=2)
+        self.assertTrue(any("Bulk energy per atom" in call.args[0] for call in prompts.call_args_list))
+        self.assertIn('"gamma_ev_a2": 0.03125', output.getvalue())
 
     def test_import_without_desktop(self):
         result = subprocess.run([sys.executable, "-c", "import iface.api,sys; assert 'tkinter' not in sys.modules; print('headless OK')"], capture_output=True, text=True)

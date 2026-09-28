@@ -11,7 +11,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PREFIX = "iface-linux-3.0.1"
+PREFIX = "iface-linux-3.1.0"
 
 
 def sources():

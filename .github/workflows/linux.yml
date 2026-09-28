@@ -33,6 +33,5 @@ jobs:
         run: |
           cd "$RUNNER_TEMP"
           python -m unittest discover -s "$GITHUB_WORKSPACE/tests" -v
-          python "$GITHUB_WORKSPACE/tools/independent_checks.py" --output "$RUNNER_TEMP/independent-checks"
       - name: Build source releases
         run: python tools/build_release.py --output "$RUNNER_TEMP/release"

@@ -82,13 +82,7 @@ def preflight(directory, scheduler="slurm"):
             errors.append(f"job.sh must use LF line endings, a shebang, and {directive} directives.")
         images = int(params.get("IMAGES", "0"))
         if images:
-            if not 1 <= images <= 32:
-                errors.append("NEB IMAGES must be between 1 and 32.")
-            else:
-                for i in range(images + 2):
-                    image = Poscar.read(root / f"{i:02d}" / "POSCAR")
-                    from iface.neb import compatible_endpoints
-                    compatible_endpoints(structure, image)
+            errors.append("Only single-structure calculations are supported; remove IMAGES from INCAR.")
         warnings.append("Input validation does not establish physical convergence or cluster compatibility.")
     except (ValueError, OSError, IndexError) as exc:
         errors.append(str(exc))

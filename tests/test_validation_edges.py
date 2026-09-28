@@ -5,7 +5,6 @@ import tempfile
 import unittest
 
 from iface.formats import Poscar
-from iface.neb import effective_frequency
 from iface.results import inspect_calculation, results_csv
 
 
@@ -37,19 +36,6 @@ class ValidationEdges(unittest.TestCase):
         if poscar is not None:
             (directory / "POSCAR").write_text(poscar, encoding="utf-8")
         return directory
-
-    def vibration_pair(self, initial_structure=structure(), saddle_structure=structure(),
-                       initial_modes=((2, False), (3, False), (4, False)),
-                       saddle_modes=((1, True), (5, False), (6, False))):
-        directories = []
-        for name, poscar, modes in (("initial", initial_structure, initial_modes),
-                                    ("saddle", saddle_structure, saddle_modes)):
-            directory = self.folder(name, poscar)
-            lines = [f" {index} {'f/i' if imaginary else 'f'} = {value} THz\n"
-                     for index, (value, imaginary) in enumerate(modes, 1)]
-            (directory / "OUTCAR").write_text("".join(lines) + FINISHED, encoding="utf-8")
-            directories.append(directory)
-        return directories
 
     def test_fictitious_and_obsolete_element_symbols_rejected(self):
         path = self.root / "POSCAR"
@@ -149,65 +135,6 @@ class ValidationEdges(unittest.TestCase):
         result = inspect_calculation(directory)
         self.assertIsNone(result["max_force_ev_a"])
         self.assertIn("Cannot verify", " ".join(result["warnings"]))
-
-    def test_analytical_prefactor_and_equivalent_all_active_masks(self):
-        pair = self.vibration_pair(saddle_structure=structure(flags=["T T T"]))
-        result = effective_frequency(*pair)
-        # Independent Vineyard product: (2*3*4)/(5*6) = 0.8 THz.
-        self.assertAlmostEqual(result["effective_frequency_thz"], 0.8)
-        self.assertAlmostEqual(result["effective_frequency_hz"] / 1e12, 0.8)
-        self.assertEqual(result["active_degrees_of_freedom"], 3)
-        self.assertEqual(result["verified_checks"], ["species_order", "active_coordinates", "mode_count"])
-
-    def test_species_order_mismatch_rejected(self):
-        pair = self.vibration_pair(
-            initial_structure=structure("Al O", "1 1", ["T T T", "F F F"]),
-            saddle_structure=structure("O Al", "1 1", ["T T T", "F F F"]))
-        with self.assertRaisesRegex(ValueError, "species and atom ordering"):
-            effective_frequency(*pair)
-
-    def test_active_count_mismatch_rejected(self):
-        pair = self.vibration_pair(saddle_structure=structure(flags=["T F F"]))
-        with self.assertRaisesRegex(ValueError, "matching active degrees"):
-            effective_frequency(*pair)
-
-    def test_equal_active_count_different_directions_rejected(self):
-        pair = self.vibration_pair(
-            initial_structure=structure(flags=["T F F"]),
-            saddle_structure=structure(flags=["F T F"]),
-            initial_modes=((2, False),), saddle_modes=((1, True),))
-        with self.assertRaisesRegex(ValueError, "every atom and direction"):
-            effective_frequency(*pair)
-
-    def test_equal_mode_counts_that_exceed_active_count_rejected(self):
-        pair = self.vibration_pair(
-            initial_structure=structure(flags=["T F F"]),
-            saddle_structure=structure(flags=["T F F"]))
-        with self.assertRaisesRegex(ValueError, "exactly 1 modes"):
-            effective_frequency(*pair)
-
-    def test_equal_mode_counts_below_active_count_rejected(self):
-        pair = self.vibration_pair(initial_modes=((2, False),), saddle_modes=((1, True),))
-        with self.assertRaisesRegex(ValueError, "exactly 3 modes"):
-            effective_frequency(*pair)
-
-    def test_missing_initial_structure_prevents_unverified_prefactor(self):
-        pair = self.vibration_pair(initial_structure=None)
-        with self.assertRaisesRegex(ValueError, "valid initial POSCAR"):
-            effective_frequency(*pair)
-
-    def test_missing_saddle_structure_prevents_unverified_prefactor(self):
-        pair = self.vibration_pair(saddle_structure=None)
-        with self.assertRaisesRegex(ValueError, "valid saddle POSCAR"):
-            effective_frequency(*pair)
-
-    def test_all_frozen_structure_rejected(self):
-        pair = self.vibration_pair(
-            initial_structure=structure(flags=["F F F"]),
-            saddle_structure=structure(flags=["F F F"]))
-        with self.assertRaisesRegex(ValueError, "At least one active degree"):
-            effective_frequency(*pair)
-
 
 if __name__ == "__main__":
     unittest.main()

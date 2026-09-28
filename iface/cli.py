@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import math
 from pathlib import Path
 import shlex
 import sys
@@ -31,11 +32,65 @@ def miller(value):
         raise argparse.ArgumentTypeError("Use a nonzero Miller index, for example 1,1,1.") from exc
 
 
+def offset(value):
+    try:
+        values = tuple(float(v) for v in value.split(","))
+        if len(values) != 2 or not all(math.isfinite(v) for v in values):
+            raise ValueError
+        return values
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Use two fractional in-plane offsets, for example 0.5,0.") from exc
+
+
 def parser():
-    p = argparse.ArgumentParser(prog="iface", description="iface: English Linux VASP assistant")
+    p = argparse.ArgumentParser(prog="iface", description="iface: Linux interface modeling, interlayer control and surface calculations")
     p.add_argument("--version", action="version", version=f"iface {__version__}")
     groups = p.add_subparsers(dest="group")
     groups.add_parser("menu", help="Open the interactive numbered menu")
+    structures = groups.add_parser("structure", help="Existing iface slab/interface engines (optional dependency)")
+    structure_cmd = structures.add_subparsers(dest="action", required=True)
+    convert = structure_cmd.add_parser("convert", help="Convert CIF or a supported structure to POSCAR")
+    convert.add_argument("source")
+    convert.add_argument("output")
+    slab = structure_cmd.add_parser("slab", help="Generate a surface slab")
+    slab.add_argument("source")
+    slab.add_argument("output")
+    slab.add_argument("--miller", type=miller, default=(1, 0, 0))
+    slab.add_argument("--layers", type=int, default=6)
+    slab.add_argument("--vacuum", type=float, default=15)
+    slab.add_argument("--termination", type=int, default=0)
+    interface = structure_cmd.add_parser("interface", help="Match two crystals and scan interface gaps")
+    for name in ("substrate", "film", "output"):
+        interface.add_argument(name)
+    for name in ("substrate", "film"):
+        interface.add_argument(f"--{name}-miller", type=miller, default=(1, 0, 0))
+        interface.add_argument(f"--{name}-layers", type=int, default=6)
+    interface.add_argument("--gaps", nargs="+", type=float, default=[2.5])
+    interface.add_argument("--lateral-offsets", nargs="+", type=offset,
+                           default=[(0.0, 0.0), (0.5, 0.0), (0.0, 0.5), (0.5, 0.5)])
+    interface.add_argument("--max-strain", type=float, default=0.05)
+    interface.add_argument("--max-area", type=float, default=500)
+    interface.add_argument("--max-atoms", type=int, default=1000)
+    interface.add_argument("--limit", type=int, default=24)
+    scan = structure_cmd.add_parser("scan", help="Generate a batch of material, layer and interface-gap combinations")
+    scan.add_argument("output")
+    scan.add_argument("--substrates", nargs="+", required=True)
+    scan.add_argument("--films", nargs="+", required=True)
+    for name in ("substrate", "film"):
+        scan.add_argument(f"--{name}-miller", type=miller, default=(1, 0, 0))
+        scan.add_argument(f"--{name}-layer-values", nargs="+", type=int, default=[6])
+    scan.add_argument("--gaps", nargs="+", type=float, default=[2.5])
+    scan.add_argument("--lateral-offsets", nargs="+", type=offset, default=[(0.0, 0.0)])
+    scan.add_argument("--max-strain", type=float, default=0.05)
+    scan.add_argument("--max-area", type=float, default=500)
+    scan.add_argument("--max-atoms", type=int, default=1000)
+    scan.add_argument("--limit-per-gap", type=int, default=1)
+    scan_results = structure_cmd.add_parser("scan-results", help="Inspect energies for an interface batch")
+    scan_results.add_argument("output")
+    surface = structure_cmd.add_parser("surface-energy", help="Calculate surface energy from a slab result and a bulk reference")
+    surface.add_argument("directory")
+    surface.add_argument("--bulk-energy-per-atom", type=float, required=True, help="Consistent bulk reference energy in eV/atom")
+    surface.add_argument("--surfaces", type=int, default=2, help="Number of equivalent exposed slab surfaces")
     os_group = groups.add_parser("os", help="Optimization and static calculations")
     os_cmd = os_group.add_subparsers(dest="action", required=True)
     prep = os_cmd.add_parser("prepare", help="Create a new VASP input directory")
@@ -73,24 +128,6 @@ def parser():
     cleanup.add_argument("directory", nargs="?", default=".")
     cleanup.add_argument("--keep", nargs="*", default=[])
     cleanup.add_argument("--apply", action="store_true", help="Move outputs into .iface-archive")
-    neb = groups.add_parser("neb", help="Transition states and vibrations")
-    neb_cmd = neb.add_subparsers(dest="action", required=True)
-    interp = neb_cmd.add_parser("prepare", help="Create a linearly interpolated NEB path")
-    for name in ("initial", "final", "template", "output"):
-        interp.add_argument(name)
-    interp.add_argument("--images", type=int, default=5)
-    interp.add_argument("--no-wrap", action="store_true", help="Preserve explicit unwrapped endpoint displacement")
-    interp.add_argument("--climb", action="store_true", help="Enable LCLIMB for a compatible VASP/VTST build")
-    nr = neb_cmd.add_parser("results", help="Inspect image energies, forces and provisional barriers")
-    nr.add_argument("directory", nargs="?", default=".")
-    vibration = neb_cmd.add_parser("vibration", help="Create finite-difference vibrational inputs")
-    for name in ("structure", "template", "output"):
-        vibration.add_argument(name)
-    vibration.add_argument("--atoms", nargs="+", type=int, required=True, help="One-based moving atom indices")
-    vibration.add_argument("--displacement", type=float, default=0.015)
-    frequency = neb_cmd.add_parser("frequency", help="Calculate a harmonic Vineyard prefactor")
-    frequency.add_argument("initial")
-    frequency.add_argument("saddle")
     test = groups.add_parser("test", help="ENCUT and k-point convergence tests")
     test_cmd = test.add_subparsers(dest="action", required=True)
     for name, conversion in (("encut", float), ("kpoints", mesh)):
@@ -101,29 +138,6 @@ def parser():
     summary = test_cmd.add_parser("results", help="Compare energies with the densest sweep point")
     summary.add_argument("directory")
     summary.add_argument("--tolerance", type=float, default=1.0, help="Tolerance in meV/atom")
-    structures = groups.add_parser("structure", help="Existing iface slab/interface engines (optional dependency)")
-    structure_cmd = structures.add_subparsers(dest="action", required=True)
-    convert = structure_cmd.add_parser("convert", help="Convert CIF or a supported structure to POSCAR")
-    convert.add_argument("source")
-    convert.add_argument("output")
-    slab = structure_cmd.add_parser("slab", help="Generate a surface slab")
-    slab.add_argument("source")
-    slab.add_argument("output")
-    slab.add_argument("--miller", type=miller, default=(1, 0, 0))
-    slab.add_argument("--layers", type=int, default=6)
-    slab.add_argument("--vacuum", type=float, default=15)
-    slab.add_argument("--termination", type=int, default=0)
-    interface = structure_cmd.add_parser("interface", help="Match two crystals and scan interface gaps")
-    for name in ("substrate", "film", "output"):
-        interface.add_argument(name)
-    for name in ("substrate", "film"):
-        interface.add_argument(f"--{name}-miller", type=miller, default=(1, 0, 0))
-        interface.add_argument(f"--{name}-layers", type=int, default=6)
-    interface.add_argument("--gaps", nargs="+", type=float, default=[2.5])
-    interface.add_argument("--max-strain", type=float, default=0.05)
-    interface.add_argument("--max-area", type=float, default=500)
-    interface.add_argument("--max-atoms", type=int, default=1000)
-    interface.add_argument("--limit", type=int, default=24)
     jobs = groups.add_parser("jobs", help="Explicit local-cluster submission and queue commands")
     jobs_cmd = jobs.add_subparsers(dest="action", required=True)
     submit = jobs_cmd.add_parser("submit", help="Preflight and submit exactly one calculation")
@@ -175,16 +189,6 @@ def execute(args):
             return results_csv(rows) if args.csv else rows
         if action == "clean":
             return archive_outputs(**values)
-    if group == "neb":
-        if action == "prepare":
-            return api.prepare_neb(args.initial, args.final, args.template, args.output,
-                                   args.images, not args.no_wrap, args.climb)
-        if action == "results":
-            return api.neb_report(args.directory)
-        if action == "vibration":
-            return api.prepare_vibration(**values)
-        if action == "frequency":
-            return api.effective_frequency(args.initial, args.saddle)
     if group == "test":
         if action == "results":
             return api.convergence_report(args.directory, args.tolerance)
@@ -196,6 +200,12 @@ def execute(args):
             return api.slab(**values)
         if action == "interface":
             return api.interfaces(**values)
+        if action == "scan":
+            return api.interface_scan(**values)
+        if action == "scan-results":
+            return api.inspect_interface_scan(**values)
+        if action == "surface-energy":
+            return api.surface_energy(**values)
     if group == "jobs":
         if action == "submit":
             return api.submit(args.directory, args.scheduler, args.yes)
@@ -221,17 +231,16 @@ def _ask(label, default=None):
 
 def menu():
     sections = {
-        "1": ("Optimization and static", [("Generate inputs", "os prepare"), ("Relaxed to static", "os static"),
+        "1": ("Structures and interfaces", [("Convert structure", "structure convert"), ("Generate slab", "structure slab"),
+              ("Match interfaces", "structure interface"), ("Scan interface combinations", "structure scan"),
+              ("Inspect interface scan results", "structure scan-results"), ("Calculate surface energy", "structure surface-energy")]),
+        "2": ("VASP inputs and results", [("Generate inputs", "os prepare"), ("Relaxed to static", "os static"),
               ("Generate POTCAR", "os potcar"), ("Generate KPOINTS", "os kpoints"),
               ("Generate job script", "os script"), ("Archive outputs", "os clean"),
               ("Preflight inputs", "os check"), ("Inspect results", "os results")]),
-        "2": ("NEB and vibrations", [("Generate NEB path", "neb prepare"), ("Inspect NEB results", "neb results"),
-              ("Generate vibration inputs", "neb vibration"), ("Calculate effective frequency", "neb frequency")]),
         "3": ("Convergence tests", [("ENCUT sweep", "test encut"), ("K-point sweep", "test kpoints"),
               ("Inspect convergence results", "test results")]),
-        "4": ("Structures and interfaces", [("Convert structure", "structure convert"), ("Generate slab", "structure slab"),
-              ("Match interfaces", "structure interface")]),
-        "5": ("Scheduler jobs", [("Show queue", "jobs status"), ("Submit calculation", "jobs submit"),
+        "4": ("Scheduler jobs", [("Show queue", "jobs status"), ("Submit calculation", "jobs submit"),
               ("Cancel job", "jobs cancel")]),
     }
     print(f"\niface {__version__} | Linux terminal edition | English\nWorking directory: {Path.cwd()}")
@@ -255,14 +264,20 @@ def menu():
         action_parser = next(a for a in group_parser._actions if isinstance(a, argparse._SubParsersAction)).choices[command[1]]
         print(f"\nCommand: iface {' '.join(command)}")
         action_parser.print_help()
-        for argument in action_parser._actions:
-            if argument.option_strings:
-                continue
-            default = argument.default if argument.default is not None else None
-            value = _ask(argument.dest.replace("_", " ").capitalize(), default)
-            command.append(value)
-        extras = _ask("Options (quote paths containing spaces; Enter uses defaults)")
         try:
+            for argument in action_parser._actions:
+                if argument.option_strings and not argument.required:
+                    continue
+                default = argument.default if argument.default is not None else None
+                label = argument.dest.replace("_", " ").capitalize()
+                multiple = argument.nargs in ("+", "*") or isinstance(argument.nargs, int)
+                if multiple:
+                    label += " (space-separated; quote paths containing spaces)"
+                value = _ask(label, default)
+                if argument.option_strings:
+                    command.append(argument.option_strings[0])
+                command.extend(shlex.split(value) if multiple else [value])
+            extras = _ask("Options (quote paths containing spaces; Enter uses defaults)")
             command.extend(shlex.split(extras))
             parsed = root_parser.parse_args(command)
             if parsed.group == "jobs" and parsed.action in ("submit", "cancel"):

@@ -58,34 +58,76 @@ def slab(source, output, miller=(1, 0, 0), layers=6, vacuum=15, termination=0):
 
 def interfaces(substrate, film, output, substrate_miller=(1, 0, 0), film_miller=(1, 0, 0),
                substrate_layers=6, film_layers=6, gaps=(2.5,), max_strain=0.05,
-               max_area=500, max_atoms=1000, limit=24):
+               max_area=500, max_atoms=1000, limit=24,
+               lateral_offsets=((0.0, 0.0), (0.5, 0.0), (0.0, 0.5), (0.5, 0.5))):
     _miller(substrate_miller)
     _miller(film_miller)
     for value, name in ((substrate_layers, "Substrate layers"), (film_layers, "Film layers"),
                         (max_area, "Maximum area"), (max_strain, "Maximum strain")):
         _positive(value, name)
+    gaps = tuple(dict.fromkeys(float(value) for value in gaps))
     if not gaps or any(not math.isfinite(v) or not 0.5 <= v <= 10 for v in gaps):
         raise ValueError("Every gap must be finite and between 0.5 and 10 angstrom.")
-    if not 1 <= limit <= 300 or not 1 <= max_atoms <= 1000:
-        raise ValueError("Use 1 to 300 candidates and at most 1000 atoms per structure.")
+    if any(int(value) != value for value in (substrate_layers, film_layers, limit, max_atoms)):
+        raise ValueError("Layer counts, candidate limits and maximum atoms must be integers.")
+    if not len(gaps) <= limit <= 300 or not 1 <= max_atoms <= 1000:
+        raise ValueError("Allow at least one candidate per requested gap, at most 300 candidates and 1000 atoms.")
+    lateral_offsets = tuple(tuple(float(value) for value in offset) for offset in lateral_offsets)
+    if not lateral_offsets or any(len(offset) != 2 or not all(math.isfinite(v) for v in offset)
+                                  for offset in lateral_offsets):
+        raise ValueError("Every lateral offset must contain two finite fractional coordinates.")
     from iface.core.interface_builder import search_interface_candidates
     substrate_structure, film_structure = _load_ordered(substrate), _load_ordered(film)
-    candidates = search_interface_candidates(
-        substrate_structure, film_structure, substrate_miller=substrate_miller,
-        film_miller=film_miller, substrate_layers=substrate_layers, film_layers=film_layers,
-        gap_values=list(gaps), max_strain=max_strain, max_area=max_area, max_atoms=max_atoms, limit=limit)
-    if not candidates:
-        raise ValueError("No interface candidates meet the requested bounds. Review strain, area and atom limits.")
+    candidates = []
+    for gap_index, gap in enumerate(gaps):
+        per_gap_limit = int(limit) // len(gaps) + (gap_index < int(limit) % len(gaps))
+        found = search_interface_candidates(
+            substrate_structure, film_structure, substrate_miller=substrate_miller,
+            film_miller=film_miller, substrate_layers=substrate_layers, film_layers=film_layers,
+            gap_values=[gap], max_strain=max_strain, max_area=max_area, max_atoms=max_atoms,
+            limit=per_gap_limit, lateral_offsets=lateral_offsets)
+        if not found:
+            raise ValueError(f"No interface candidates meet the requested bounds at gap {gap:g} A. "
+                             "Review strain, area and atom limits.")
+        candidates.extend(found)
     from pymatgen.io.vasp import Poscar
     rows = []
     with new_directory(output) as stage:
-        for candidate in candidates:
-            name = f"interface_{candidate.index + 1:03d}"
+        for index, candidate in enumerate(candidates, 1):
+            name = f"interface_{index:03d}"
             write_new(stage / name / "POSCAR", Poscar(candidate.structure.get_sorted_structure()).get_str())
-            rows.append({"directory": name, "atoms": candidate.atoms, "gap_a": candidate.gap,
-                         "area_a2": candidate.area, "strain": candidate.strain,
-                         "score": candidate.score, "termination": candidate.label,
-                         "offset": candidate.offset})
-        write_json(stage / "manifest.json", {"kind": "interface_scan", "candidates": rows,
+            rows.append(_interface_metadata(candidate, name, substrate, film,
+                                            substrate_layers, film_layers, "A01_B01"))
+        write_json(stage / "manifest.json", {"kind": "interface_scan", "schema_version": 2,
+                    "requested_gaps_a": list(gaps), "candidates": rows,
                     "note": "Geometric matching scores are not formation energies or stability predictions."})
     return {"directory": str(Path(output).resolve()), "candidates": rows}
+
+
+def _interface_metadata(candidate, directory, substrate, film, substrate_layers, film_layers, pair_id):
+    """Keep the original scan identity and matching geometry beside each POSCAR."""
+    structure = candidate.structure
+    exported = structure.get_sorted_structure()
+    labels = exported.site_properties.get("interface_label", [])
+    substrate_indices = [index for index, label in enumerate(labels) if label == "substrate"]
+    film_indices = [index for index, label in enumerate(labels) if label == "film"]
+    metadata = {"directory": directory, "pair_id": pair_id,
+            "source_a": str(Path(substrate).resolve()), "source_b": str(Path(film).resolve()),
+            "substrate_layers": int(substrate_layers), "film_layers": int(film_layers),
+            "atoms": candidate.atoms, "gap_a": candidate.gap,
+            "area_a2": candidate.area, "strain": candidate.strain,
+            "score": candidate.score, "termination": candidate.label,
+            "offset": list(candidate.offset),
+            "composition": {str(key): float(value) for key, value in
+                            structure.composition.get_el_amt_dict().items()},
+            "in_plane_vectors_a": [[round(float(value), 8) for value in vector]
+                                   for vector in structure.lattice.matrix[:2]]}
+    if substrate_indices and film_indices:
+        import numpy as np
+        normal = np.cross(exported.lattice.matrix[0], exported.lattice.matrix[1])
+        normal /= np.linalg.norm(normal)
+        heights = exported.cart_coords @ normal
+        metadata.update(substrate_atom_indices=substrate_indices, film_atom_indices=film_indices,
+                        measured_gap_a=float(min(heights[film_indices]) - max(heights[substrate_indices])),
+                        atom_indices_are_zero_based=True)
+    return metadata

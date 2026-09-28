@@ -9,6 +9,7 @@ import re
 import numpy as np
 
 from iface.formats import FLOAT, Poscar, read_incar, number
+from iface.geometry import minimum_image
 
 
 def inspect_calculation(directory):
@@ -29,7 +30,6 @@ def inspect_calculation(directory):
     force_rows = None
     last_force_rows = None
     nions = None
-    frequencies = []
     if outcar.is_file():
         result["status"] = "incomplete"
         with outcar.open(encoding="utf-8", errors="replace") as stream:
@@ -64,9 +64,6 @@ def inspect_calculation(directory):
                     if force_rows or (fields and set(line.strip()) != {"-"}):
                         last_force_rows = force_rows
                         force_rows = None
-                match = re.search(r"\d+\s+(f(?:/i)?)\s*=\s*(" + FLOAT + r")\s+THz", line)
-                if match:
-                    frequencies.append({"thz": number(match.group(2)), "imaginary": match.group(1) == "f/i"})
                 upper = line.upper()
                 key = "errors" if any(x in upper for x in ("ERROR", "VERY BAD NEWS", "ZBRENT: FATAL")) else "warnings"
                 if key == "errors" or "WARNING" in upper:
@@ -122,14 +119,12 @@ def inspect_calculation(directory):
         result["status"] = "incomplete"
     # A normal program exit does not prove electronic or ionic convergence.
     result["electronic_convergence"] = "not_assessed"
-    result["frequencies"] = frequencies
     if initial is not None:
         try:
             if (root / "CONTCAR").is_file() and (root / "CONTCAR").stat().st_size:
                 final = Poscar.read(root / "CONTCAR")
                 if initial.species == final.species and initial.counts == final.counts:
                     if np.allclose(initial.cell, final.cell, atol=1e-7, rtol=1e-7):
-                        from iface.neb import minimum_image
                         displacement = minimum_image(final.fractional - initial.fractional, initial.cell)
                         result["max_displacement_a"] = float(np.max(np.linalg.norm(displacement @ initial.cell, axis=1)))
                     else:

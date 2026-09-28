@@ -53,7 +53,6 @@ def new_directory(path):
 def fingerprint(directory):
     root = Path(directory)
     paths = [root / name for name in INPUTS]
-    paths += sorted(root.glob("[0-9][0-9]/POSCAR"))
     digest = hashlib.sha256()
     for path in paths:
         if not path.is_file():
