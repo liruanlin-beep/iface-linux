@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "backend": "Linux Secret Service",
+  "checks": [
+    "native round trip",
+    "reference-only configuration",
+    "replacement removes previous entry",
+    "remove deletes native entry",
+    "idempotent removal",
+    "disposable DBus and home"
+  ]
+}

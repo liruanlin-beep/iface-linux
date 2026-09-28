@@ -1,7 +1,20 @@
-include LICENSE NOTICE.md CITATION.cff README.md VALIDATION.md CHANGELOG.md
-include CONTRIBUTING.md install.sh .gitattributes
-recursive-include docs *.md *.png *.json
-recursive-include examples *.py POSCAR *.vasp *.cif *.json
+include *.md LICENSE CITATION.cff WINDOWS_BASELINE.json pyproject.toml install.sh
+include requirements-tested.txt
+include .gitattributes .gitignore
+recursive-include app *.py *.json *.sh *.ico
 recursive-include tests *.py
 recursive-include tools *.py
-global-exclude __pycache__ *.py[cod]
+recursive-include docs/screenshots *.png
+recursive-include docs/validation *.json
+include examples/Al/POSCAR
+include .github/workflows/tests.yml
+global-exclude __pycache__ *.py[cod] .DS_Store
+prune .git
+prune .venv
+prune build
+prune dist
+prune config
+prune projects
+prune outputs
+prune database
+prune logs

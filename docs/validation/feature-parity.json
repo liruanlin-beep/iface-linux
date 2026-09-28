@@ -1,0 +1,45 @@
+{
+  "passed": true,
+  "baseline_version": "current Windows v2.0 source (historical rc3: 63 of 64 Python modules match)",
+  "baseline_manifest_sha256": "227d78d21acf9143267528c74232305ef075dc1883023678a360000b876c1f7f",
+  "original_app_files": 68,
+  "linux_app_files": 69,
+  "original_declarations": 987,
+  "original_test_declarations": 156,
+  "original_presets": 10,
+  "original_agent_tools": 19,
+  "failures": [],
+  "callback_implementation_changes_for_review": [
+    {
+      "module": "app/ui/ssh_file_transfer_dialog.py",
+      "original": 14,
+      "linux": 18
+    }
+  ],
+  "reviewed_layout_adaptations": [
+    {
+      "module": "app/ui/dialogs.py",
+      "replaced": {
+        "ttk.Frame": 1,
+        "ttk.Label": 1
+      },
+      "helpers": {
+        "VerticalScrolledFrame": 1,
+        "WidthLabel": 1
+      },
+      "reason": "SettingsDialog._new_page uses a scrolling body; its appearance explanation uses a width-wrapping label. All settings and text remain available."
+    },
+    {
+      "module": "app/ui/ssh_file_transfer_dialog.py",
+      "replaced": {
+        "ttk.Frame": 2
+      },
+      "helpers": {
+        "WrappingRow": 2
+      },
+      "reason": "Local and remote action rows wrap the original buttons while preserving every callback."
+    }
+  ],
+  "accepted_localization_delta": "task_preflight: English placeholder synonyms are allowed only alongside all five original placeholder tokens.",
+  "scope": "Static declarations, control counts, original test retention, computational ASTs, preset fixtures and tool risks. Run regression tests and desktop acceptance separately."
+}

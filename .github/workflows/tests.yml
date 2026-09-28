@@ -1,0 +1,48 @@
+name: Linux desktop tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3.12-venv python3-tk xvfb xauth xdg-utils openssh-client gnome-keyring dbus-x11 fonts-dejavu-core libx11-6 libxext6 libxrender1
+      - name: Install the software
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install . build
+      - name: Verify original feature declarations and presets
+        run: .venv/bin/python tools/verify_feature_parity.py --report parity-report.json
+      - name: Run the original regression suite with a display
+        env:
+          IFACE_DATA_DIR: ${{ runner.temp }}/iface-regression
+          MPLBACKEND: Agg
+        run: xvfb-run -a .venv/bin/python -m unittest discover -s tests -v
+      - name: Run the installed full desktop acceptance check
+        env:
+          MPLBACKEND: Agg
+        run: |
+          cd "${RUNNER_TEMP}"
+          xvfb-run -a "${GITHUB_WORKSPACE}/.venv/bin/iface" --self-test "${GITHUB_WORKSPACE}/acceptance-report.json"
+      - name: Build source and wheel packages
+        run: .venv/bin/python -m build
+      - name: Save acceptance reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-desktop-acceptance
+          path: |
+            parity-report.json
+            acceptance-report.json

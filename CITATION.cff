@@ -1,18 +1,19 @@
 cff-version: 1.2.0
 message: "Please cite the software version and repository when using iface."
 type: software
-title: "iface: surface and interface modelling for Linux"
-version: 3.1.0
+title: "iface for Linux: the complete desktop application"
+version: 4.0.0
 date-released: 2026-09-28
 authors:
   - name: "iface contributors"
 license: MIT
 repository-code: "https://github.com/liruanlin-beep/iface-linux"
-url: "https://github.com/liruanlin-beep/iface-linux/releases/tag/v3.1.0"
+url: "https://github.com/liruanlin-beep/iface-linux/releases/tag/v4.0.0"
 abstract: >-
-  Linux adaptation of the author's surface and interface modelling software,
-  with independent layer counts, interface separation scans, VASP input
-  preparation and surface-energy inspection.
+  Linux desktop adaptation of the author's iface Windows application,
+  retaining structure viewing and editing, surface and interface modeling,
+  layer and separation scans, VASP input preparation, dependent workflows,
+  remote tasks, results and scientific post-processing.
 keywords:
   - VASP
   - Linux

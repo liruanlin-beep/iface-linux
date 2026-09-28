@@ -1,0 +1,86 @@
+{
+  "passed": true,
+  "platform": "linux",
+  "python": "3.12.3 (main, Aug 31 2026, 10:18:26) [GCC 13.3.0]",
+  "scope": "Offline GUI, model generation and local files only; no VASP/SSH/AI execution.",
+  "steps": [
+    {
+      "name": "01_main",
+      "status": "passed",
+      "seconds": 0.324
+    },
+    {
+      "name": "02_structure_import",
+      "status": "passed",
+      "seconds": 0.392
+    },
+    {
+      "name": "03_structure_viewer",
+      "status": "passed",
+      "seconds": 0.345
+    },
+    {
+      "name": "04_surface_model",
+      "status": "passed",
+      "seconds": 0.362
+    },
+    {
+      "name": "05_surface_energy",
+      "status": "passed",
+      "seconds": 0.392
+    },
+    {
+      "name": "06_structure_tools",
+      "status": "passed",
+      "seconds": 1.026
+    },
+    {
+      "name": "07_utility_dialogs",
+      "status": "passed",
+      "seconds": 1.369
+    },
+    {
+      "name": "08_high_throughput_surface_interface",
+      "status": "passed",
+      "seconds": 3.014
+    },
+    {
+      "name": "09_task_center",
+      "status": "passed",
+      "seconds": 1.248
+    },
+    {
+      "name": "10_postprocessing",
+      "status": "passed",
+      "seconds": 0.828
+    },
+    {
+      "name": "11_settings",
+      "status": "passed",
+      "seconds": 1.912
+    },
+    {
+      "name": "12_agent",
+      "status": "passed",
+      "seconds": 0.453
+    },
+    {
+      "name": "13_ssh_windows_offline",
+      "status": "passed",
+      "seconds": 1.704
+    },
+    {
+      "name": "14_templates_and_independent_viewer",
+      "status": "passed",
+      "seconds": 1.314
+    },
+    {
+      "name": "15_custom_background",
+      "status": "passed",
+      "seconds": 0.385
+    }
+  ],
+  "callback_errors": [],
+  "visible_untranslated_text": 0,
+  "detected_label_clipping": 0
+}

@@ -1,129 +1,92 @@
 # iface for Linux
 
-**Version 3.1.0** | [Examples](docs/EXAMPLES.md) | [Python API](docs/API.md) | [Validation](VALIDATION.md)
+**4.0.0 — the complete desktop application.** This release ports the author's
+original iface Windows application to Linux, preserving its structure viewer,
+surface/interface modeling, layer and separation controls, VASP inputs,
+dependent workflows, task center, results, SSH/SFTP and AI assistant.
+It replaces the reduced 3.x terminal edition. The desktop opens in English.
 
-iface adapts the author's original surface and interface modelling software to
-Linux with English numbered menus, commands and a Python API. Its main workflow
-is to build surface/interface models, control the layer counts on both sides
-and their separation, prepare VASP calculations, and inspect surface energies.
-The terminal interface runs without a graphical desktop.
+![Linux desktop](docs/screenshots/main.png)
 
-| Original workflow | Linux support |
-| --- | --- |
-| Surface models | Miller indices, atomic layers, termination and vacuum |
-| Interface models | Two input crystals, independent layer counts and interface gaps |
-| Layer and gap scans | Multiple structure pairs, layer lists and explicit gap lists |
-| Spacing comparison | Inspect available energies within comparable geometry groups |
-| Surface energy | Read VASP energy and geometry; supply the bulk reference energy |
-| VASP preparation | Relaxation/static inputs, potential selection and input checks |
-| Supporting tools | Cutoff/k-point convergence, result inspection, Slurm/PBS scripts |
+The screenshot uses an illustrative Al structure; it is not a calculated result.
 
-## Install on Linux
+## Install and launch
 
-Python 3.10 or newer and its venv module are required. The modelling workflow
-uses pymatgen; the recommended install includes it:
+Use a Linux desktop with Python 3.12 or newer and Tk. Ubuntu 24.04 is the tested
+distribution. Wayland sessions require XWayland for Tk. On Ubuntu/Debian:
 
 ```bash
-tar -xzf iface-linux-3.1.0.tar.gz
-cd iface-linux-3.1.0
-bash install.sh --structures
-export PATH="$HOME/.local/share/iface/terminal-3.0/bin:$PATH"
-iface
+sudo apt update
+sudo apt install python3-venv python3-tk xdg-utils openssh-client gnome-keyring
 ```
 
-The existing installation location is retained so upgrades keep the same command.
-Set `IFACE_VENV` to use another virtual environment. `PYTHON` selects Python and
-`XDG_DATA_HOME` controls the default data base. An existing virtual environment
-is upgraded by the installer. For a minimal installation without geometry tools,
-omit `--structures`; surface-energy arithmetic and input/result tools remain
-available. VASP and licensed potential files must be supplied separately.
-
-## Build surfaces and interfaces
+Download and extract the source archive from the
+[latest release](https://github.com/liruanlin-beep/iface-linux/releases/latest),
+open a terminal in that directory, and run:
 
 ```bash
-iface structure convert Al.cif Al.vasp
-iface structure slab Al.vasp slab-111 --miller 1,1,1 --layers 6 --vacuum 15
-iface structure interface A.vasp B.vasp interface-models \
-  --substrate-miller 1,1,1 --film-miller 1,1,1 \
-  --substrate-layers 6 --film-layers 4 --gaps 2.0 2.5 3.0
+bash install.sh
 ```
 
-For a complete layer/gap grid use the scan command. Both interface commands
-reserve candidates for each requested gap. The scan adds multiple structure
-pairs and independent layer lists:
+The installer creates a private virtual environment and a desktop launcher.
+It prints the launch command and installation paths. An internet connection is
+needed to install Python dependencies. For manual installation:
 
 ```bash
-iface structure scan gap-scan --substrates A.vasp --films B.vasp \
-  --substrate-layer-values 4 6 --film-layer-values 4 6 \
-  --gaps 2.0 2.5 3.0 --limit-per-gap 1
-iface structure scan-results gap-scan
+python3 -m venv ~/.local/share/iface/venv
+~/.local/share/iface/venv/bin/python -m pip install .
+~/.local/share/iface/venv/bin/iface
 ```
 
-All gaps are in angstrom, areas in square angstrom, and strain limits are
-fractions. As in the original interface engine, interface layer arguments are
-repetitions of the oriented unit cell (`in_layers=True` in pymatgen), which can
-contain more than one atomic plane. The separate slab command selects atomic
-planes. Review the exported coordinates and measured gap in the manifest. Generated POSCAR files and the manifest record model parameters.
-Candidate scores describe geometry only. They do not predict physical stability.
-New output paths are required; generators refuse to overwrite existing work.
+The release wheel is an alternative to installing `.` in an existing Python
+3.12+ virtual environment. System Tk and a graphical session are still required.
 
-## Prepare calculations and inspect energies
+## Original workflow
+
+1. Import CIF, POSCAR or CONTCAR and inspect/edit the structure in the 3D viewer.
+2. Build surfaces or pair materials A/B. Set their layer ranges, orientation,
+   matching limits, lateral offsets and interface separation ranges.
+3. Preview and export candidates, prepare input files and configure your POTCAR
+   library and remote server.
+4. Submit the original dependent calculations and monitor them in the task
+   center. Inspect results, rank scans, calculate surface energy and export
+   PDOS or charge-difference figures/data.
+
+All original calculation templates and the controlled DeepSeek assistant remain
+available. See [FEATURE_PARITY.md](FEATURE_PARITY.md) for the complete inventory
+and the exact scope of the original CI-NEB input template.
+
+## Linux integration
+
+- Files and folders open with `xdg-open`. Remote-file editing uses the configured
+  `editor_command`, then `$VISUAL`/`$EDITOR`, or the desktop file association.
+- The external SSH action uses a native terminal and `ssh`. Install a terminal
+  emulator or set `ssh_terminal_command` in the configuration if needed.
+- Settings, projects, tasks and output are stored under
+  `${XDG_DATA_HOME:-$HOME/.local/share}/iface/2.0`; the `2.0` directory identifies
+  the retained Windows data format. `IFACE_DATA_DIR` overrides this location.
+- Saved API keys use the desktop user's unlocked Secret Service keyring. Windows
+  DPAPI-encrypted keys must be entered again on Linux. Settings contain a keyring
+  reference rather than the saved secret.
+- Drag-and-drop uses the packaged `tkinterdnd2` runtime. Fonts, paths, window
+  sizing, scrolling and file/terminal opening are adapted for Linux.
+
+VASP, licensed POTCAR datasets and a cluster account must be supplied by the
+user, as in the Windows application. No manuscript or research results are
+included in this repository.
+
+## Verification and development
 
 ```bash
-iface os prepare slab-111/POSCAR slab-relax --preset surface --mesh 9x9x1 \
-  --potcar-root /path/to/your/licensed/potentials
-iface os check slab-relax
-iface jobs submit slab-relax --yes
-iface os results slab-relax
-iface os static slab-relax slab-static
-iface structure surface-energy slab-static --bulk-energy-per-atom -3.74 --surfaces 2
+python -m unittest discover -s tests -v
+iface --self-test /tmp/iface-acceptance.json
 ```
 
-The example bulk reference above is a placeholder, not a measured Al value.
-Replace it with your own consistent bulk calculation. The surface energy is
-`gamma = (E_slab - N * E_bulk_per_atom) / (surfaces * area)` and is reported in
-eV per square angstrom and J per square metre. The usual `surfaces=2` expression
-assumes two equivalent surfaces and a compatible stoichiometric bulk reference;
-it cannot isolate the energy of one face of an asymmetric slab. Missing energy
-is an error, never a zero. A report can be provisional; a completed program run
-alone does not demonstrate electronic or physical convergence.
+Use `xvfb-run -a` before these commands for headless testing. The self-test uses
+isolated synthetic data and does not submit calculations. Detailed evidence and
+the limits of local validation are in [VALIDATION.md](VALIDATION.md).
 
-For a gap scan, calculate each candidate using consistent settings and place
-its results in the candidate directory or its `02_static` subdirectory. The
-inspection command groups compatible models and preserves missing results.
-The reported gap is the requested initial separation, not a measurement of a
-relaxed CONTCAR. For a spacing-energy curve keep each geometry fixed (`NSW=0`);
-after relaxation, interpret ranking only as a comparison of starting models.
-Review convergence and calculation settings before interpreting the ranking.
-It does not compare raw total energies across different compositions or layers.
-
-The tool prepares and reads files; VASP performs the electronic-structure
-calculation. No physical result is generated merely by creating a model.
-
-## Supporting commands
-
-```bash
-iface test encut static-template cutoff-scan --values 400 450 500 550
-iface test kpoints static-template mesh-scan --values 5x5x1 7x7x1 9x9x1
-iface test results cutoff-scan
-iface jobs status
-iface --help
-```
-
-Convergence scans require a static input set including the user's POTCAR.
-Submission and cancellation are explicit operations. `iface os clean` previews
-archiving; `--apply` moves outputs into `.iface-archive` and retains inputs.
-
-## Scope correction in 3.1.0
-
-The 3.0.x port incorrectly adopted transition-state and vibrational workflows
-from a reference program. These were outside the author's intended design and
-have been removed from the commands, public API and distribution. Version 3.1.0
-centres the original interface, spacing and surface workflow. VaspCZ was supplied
-as an operating-style reference; its feature list does not define this project.
-The original Windows application is maintained separately.
-
-See [NOTICE.md](NOTICE.md) for provenance and dependency acknowledgements.
-This repository contains software, synthetic fixtures and geometry examples.
-It contains no manuscript, unpublished research dataset, VASP executable or
-licensed potential dataset. The software is distributed under the MIT licence.
+The original implementation is in `app/core` and `app/ui`; packaged resources
+are in `app/resources`. [WINDOWS_BASELINE.json](WINDOWS_BASELINE.json) records the
+original source hashes. See [NOTICE.md](NOTICE.md) for provenance and dependency
+licensing, and [CHANGELOG.md](CHANGELOG.md) for the release scope.

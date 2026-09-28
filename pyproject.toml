@@ -4,33 +4,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "iface-linux"
-version = "3.1.0"
-description = "Surface and interface modelling, layer/gap control and surface energies for Linux"
+version = "4.0.0"
+description = "Full Linux desktop port of the original iface Windows application"
 readme = "README.md"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
-requires-python = ">=3.10"
-dependencies = ["numpy>=1.24,<3"]
+dependencies = [
+  "numpy>=1.24,<3",
+  "pymatgen>=2024.5.1",
+  "matplotlib>=3.8",
+  "pillow>=10",
+  "paramiko>=3.4",
+  "tkinterdnd2>=0.4",
+  "keyring>=25; sys_platform == 'linux'",
+]
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Operating System :: POSIX :: Linux",
-    "Topic :: Scientific/Engineering :: Chemistry",
-    "Topic :: Scientific/Engineering :: Physics",
+  "Programming Language :: Python :: 3",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Scientific/Engineering :: Chemistry",
 ]
 
-[tool.setuptools]
-license-files = ["LICENSE", "NOTICE.md"]
-
-[project.optional-dependencies]
-structures = ["pymatgen>=2024.5.1"]
-
 [project.scripts]
-iface = "iface.cli:main"
+iface = "app.main:main"
 
 [project.urls]
 Repository = "https://github.com/liruanlin-beep/iface-linux"
-Documentation = "https://github.com/liruanlin-beep/iface-linux#readme"
 Issues = "https://github.com/liruanlin-beep/iface-linux/issues"
-Releases = "https://github.com/liruanlin-beep/iface-linux/releases"
 
 [tool.setuptools.packages.find]
-include = ["iface*"]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["resources/translations/*.json", "resources/templates/*.sh", "resources/*.ico"]

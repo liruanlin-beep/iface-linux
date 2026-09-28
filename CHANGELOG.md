@@ -1,16 +1,17 @@
-# Changelog
+# Changes
 
-## 3.1.0
+## 4.0.0 — 2026-09-28
 
-- Correct the Linux port to the author's original surface/interface scope.
-- Put structure modelling and layer/gap control first in the English menu.
-- Restore explicit multi-pair layer/gap scans and compatible energy inspection.
-- Port the original surface-energy calculation with units and source checks.
-- Remove the unrequested transition-state and vibrational commands and API.
-- Replace current documentation and examples to describe the actual scope.
+- Restore the complete original Windows desktop application on Linux:
+  structure viewer/editor, surface/interface modeling, independent layer and
+  separation controls, inputs, dependent workflows, task center, remote files,
+  results, post-processing and controlled AI assistant.
+- Preserve every original calculation template, scientific implementation,
+  queue control and Agent tool. Remove the 3.x terminal edition from the current
+  source tree; historical versions remain in Git tags and releases.
+- Adapt display text, fonts, scrolling, packaging, file/editor/terminal opening,
+  user-data paths and secure credential storage for Linux.
+- Include the original regression tests plus focused platform/translation
+  contract checks and headless Linux acceptance.
 
-## 3.0.x
-
-Historical releases used an overly broad interpretation of a reference program.
-They are superseded by 3.1.0 for the author's intended interface workflow.
-Their test counts and validation records apply only to those historical builds.
+This release supersedes 3.1.0 and 3.0.1. Manuscript work is outside its scope.

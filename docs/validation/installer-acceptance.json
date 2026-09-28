@@ -1,0 +1,32 @@
+{
+  "version": "4.0.0",
+  "passed": true,
+  "checks": [
+    "isolated fresh configuration",
+    "POSCAR/CIF import, supercell and input export",
+    "PNG/TIFF/PDF/SVG/XLSX export",
+    "48-workflow queue, deduplication and crash recovery",
+    "Tk main window, structure viewer, drag/drop and callbacks"
+  ],
+  "scope": "offline; synthetic data; no cluster",
+  "queue": {
+    "passed": true,
+    "workflows": 48,
+    "tasks": 176,
+    "submitted": 144,
+    "max_inflight_observed": 8,
+    "configured_max_inflight": 8,
+    "duplicate_tasks_prevented": 48,
+    "concurrent_claims_unique": true,
+    "stale_claims_recovered": 2,
+    "elapsed_seconds": 9.818,
+    "checks": [
+      "Dependency chain complete: Passed",
+      "Concurrency limit: Passed(peak 8/8）",
+      "Duplicate tasks blocked: Passed（48/48）",
+      "Dependency order: Passed",
+      "Unique concurrent claims: Passed（30/30）",
+      "Interrupted-run recovery: Passed（2/2）"
+    ]
+  }
+}
