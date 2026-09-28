@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iface-linux"
+version = "3.0.1"
+description = "English terminal workflows and Python API for VASP calculations"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24,<3"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE.md"]
+
+[project.optional-dependencies]
+structures = ["pymatgen>=2024.5.1"]
+
+[project.scripts]
+iface = "iface.cli:main"
+
+[project.urls]
+Repository = "https://github.com/liruanlin-beep/iface-linux"
+Documentation = "https://github.com/liruanlin-beep/iface-linux#readme"
+Issues = "https://github.com/liruanlin-beep/iface-linux/issues"
+Releases = "https://github.com/liruanlin-beep/iface-linux/releases"
+
+[tool.setuptools.packages.find]
+include = ["iface*"]

@@ -1,0 +1,170 @@
+{
+  "record_kind": "Selected software-validation fields from a new local Linux run; not a full environment dump",
+  "date": "2026-09-28T14:57:06.880949+08:00",
+  "software": "iface-linux 3.0.1",
+  "environment": {
+    "system": "Linux",
+    "distribution": "Ubuntu 24.04.5 LTS",
+    "python": "3.12.3",
+    "packages": {
+      "iface-linux": "3.0.1",
+      "numpy": "2.5.3",
+      "pymatgen": "2026.9.24",
+      "pymatgen-core": "2026.9.23",
+      "spglib": "2.7.0",
+      "scipy": "1.18.1"
+    }
+  },
+  "installation": "Unmodified install.sh --structures from the prepublication source archive; ordinary Linux user; local dependency wheels",
+  "regression": {
+    "total": 56,
+    "passed": 56,
+    "skipped": 0
+  },
+  "independent": {
+    "total": 22,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0
+  },
+  "cases": [
+    {
+      "id": "P01",
+      "status": "passed"
+    },
+    {
+      "id": "P02",
+      "status": "passed"
+    },
+    {
+      "id": "P03",
+      "status": "passed"
+    },
+    {
+      "id": "P04",
+      "status": "passed"
+    },
+    {
+      "id": "P05",
+      "status": "passed"
+    },
+    {
+      "id": "N01",
+      "status": "passed"
+    },
+    {
+      "id": "N02",
+      "status": "passed"
+    },
+    {
+      "id": "N03",
+      "status": "passed"
+    },
+    {
+      "id": "B01",
+      "status": "passed"
+    },
+    {
+      "id": "B02",
+      "status": "passed"
+    },
+    {
+      "id": "B03",
+      "status": "passed"
+    },
+    {
+      "id": "R01",
+      "status": "passed"
+    },
+    {
+      "id": "R02",
+      "status": "passed"
+    },
+    {
+      "id": "R03v2",
+      "status": "passed"
+    },
+    {
+      "id": "R04",
+      "status": "passed"
+    },
+    {
+      "id": "R05",
+      "status": "passed"
+    },
+    {
+      "id": "R06",
+      "status": "passed"
+    },
+    {
+      "id": "S01",
+      "status": "passed"
+    },
+    {
+      "id": "S02",
+      "status": "passed"
+    },
+    {
+      "id": "S03",
+      "status": "passed"
+    },
+    {
+      "id": "V01",
+      "status": "passed"
+    },
+    {
+      "id": "V02",
+      "status": "passed"
+    }
+  ],
+  "installed_site_packages_verified": true,
+  "runtime_source_equality": "All runtime Python files match the original implementation, installed source archive, staging repository and inspected wheel after LF line-ending normalization; no runtime statements changed",
+  "installed_runtime_files": {
+    "iface/__init__.py": "f7e102186e1baf4efcac70dd98c9907b801bef61e31ca99913efa3bcefaab2f2",
+    "iface/__main__.py": "c1e8dc88e3334462e21be74d675413d440672a65d09ac0dcad6ee6dae4f1be53",
+    "iface/api.py": "01463dc73ed9e4e1d5971286c94bf3d962a4fbfef07e6f80da43bec66fbb0d57",
+    "iface/calculations.py": "7b2c301646ef180e9e8558616b2d8e64c081a8a3cdc1e40202c7f4576dad8d88",
+    "iface/cli.py": "20589fc8b3ab1a4fbc13c45317bfc6155e6a7747458fb7d500702d29eb33f2f3",
+    "iface/core/__init__.py": "83e9b4e899249ec5679d0eb93f0b51a5d895228f3aec0bcecccfe02fcadfa5e5",
+    "iface/core/element_color_manager.py": "4046b01399ad35a38586157994228299498b313889e4f999c1972a24002a49f5",
+    "iface/core/interface_builder.py": "ffabfad1f74e631b93e09d82f23a7ffa8aeeebe1b2a896c061f17765f86af1d9",
+    "iface/core/slab_builder.py": "5bf9bf6338705c4d0d4c4bd8b5ae00531b74292a68286edf02c3684758be65a3",
+    "iface/core/structure_model.py": "c23ed77755da7863fc7980bb88114ac1f61c190a32da1a354b29e40f0605c190",
+    "iface/files.py": "765a58597b3e1a0c9f5794ec56049f57eed8bcaec67fe91c6802dce88bf32845",
+    "iface/formats.py": "23135cac39f9e0940741705db6ccf465533d1438213f62f4afc1fa6bc81d8fcb",
+    "iface/neb.py": "9df96a3046c40bbe0eaa9669c042132faa5dc7e9f66dca647cd06e4e8f105a42",
+    "iface/results.py": "fa7a3b774fb48bbdbe57f9ab15527e92921e3cb63270ed8cd0308a4f3eef7b1d",
+    "iface/scheduler.py": "ea0d01b592b58233c77bbb0b4dfb2f6db006c3dc6509ab1ea85d0631da9895f1",
+    "iface/structures.py": "524cea1cd2df9dd781613dd5a5173c96a9f2d815330433c04d042ed10df94bad"
+  },
+  "repository_runtime_files": {
+    "iface/__init__.py": "f7e102186e1baf4efcac70dd98c9907b801bef61e31ca99913efa3bcefaab2f2",
+    "iface/__main__.py": "c1e8dc88e3334462e21be74d675413d440672a65d09ac0dcad6ee6dae4f1be53",
+    "iface/api.py": "01463dc73ed9e4e1d5971286c94bf3d962a4fbfef07e6f80da43bec66fbb0d57",
+    "iface/calculations.py": "7b2c301646ef180e9e8558616b2d8e64c081a8a3cdc1e40202c7f4576dad8d88",
+    "iface/cli.py": "20589fc8b3ab1a4fbc13c45317bfc6155e6a7747458fb7d500702d29eb33f2f3",
+    "iface/core/__init__.py": "1a504fa0653ac5ebaaee3747f1e41acaa8c480ef1c0d1e47299253dca1e72de6",
+    "iface/core/element_color_manager.py": "4046b01399ad35a38586157994228299498b313889e4f999c1972a24002a49f5",
+    "iface/core/interface_builder.py": "ffabfad1f74e631b93e09d82f23a7ffa8aeeebe1b2a896c061f17765f86af1d9",
+    "iface/core/slab_builder.py": "5bf9bf6338705c4d0d4c4bd8b5ae00531b74292a68286edf02c3684758be65a3",
+    "iface/core/structure_model.py": "c23ed77755da7863fc7980bb88114ac1f61c190a32da1a354b29e40f0605c190",
+    "iface/files.py": "765a58597b3e1a0c9f5794ec56049f57eed8bcaec67fe91c6802dce88bf32845",
+    "iface/formats.py": "23135cac39f9e0940741705db6ccf465533d1438213f62f4afc1fa6bc81d8fcb",
+    "iface/neb.py": "9df96a3046c40bbe0eaa9669c042132faa5dc7e9f66dca647cd06e4e8f105a42",
+    "iface/results.py": "fa7a3b774fb48bbdbe57f9ab15527e92921e3cb63270ed8cd0308a4f3eef7b1d",
+    "iface/scheduler.py": "ea0d01b592b58233c77bbb0b4dfb2f6db006c3dc6509ab1ea85d0631da9895f1",
+    "iface/structures.py": "524cea1cd2df9dd781613dd5a5173c96a9f2d815330433c04d042ed10df94bad"
+  },
+  "packaging_line_endings": "One docstring-only core/__init__.py is normalized from CRLF to LF for Git distribution",
+  "protocol_script_sha256": "b8e8fe3282d47a025f97c97e07eb47b18cfc9ed6f8d790cf0c4eaae26772c35e",
+  "scientific_block_sha256": "9f8ba27db2c78b49253c012270c444dbf20a9edf44aa14bd7f725b5c9392ce3a",
+  "source_report_sha256": "8c0a83c459c49acabceb13969c760cc6d59afed1fd5ad3e3171bc8434082c3e8",
+  "regression_log_sha256": "fa32ca093f545402ed098bcd7cc878fdd2272acfa060beb5179a7029ab711d61",
+  "tested_prepublication_source_archive_sha256": "b2ce14677d8b95eaa4c737ea09015a759e6391c5c017d5c341ab01a787f372e8",
+  "limits": {
+    "real_vasp_executed": false,
+    "live_scheduler_executed": false,
+    "remote_github_ci_included": false
+  },
+  "privacy": "Local account and directory paths are excluded from this selected-field summary. Original execution logs remain unmodified locally."
+}

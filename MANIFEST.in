@@ -1,0 +1,7 @@
+include LICENSE NOTICE.md CITATION.cff README.md VALIDATION.md CHANGELOG.md
+include CONTRIBUTING.md install.sh .gitattributes
+recursive-include docs *.md *.png *.json
+recursive-include examples *.py POSCAR *.vasp *.cif *.json
+recursive-include tests *.py
+recursive-include tools *.py
+global-exclude __pycache__ *.py[cod]

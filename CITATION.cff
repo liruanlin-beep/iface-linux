@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "Please cite the software version and repository when using iface."
+type: software
+title: "iface: English Linux terminal workflows for VASP"
+version: 3.0.1
+date-released: 2026-09-28
+authors:
+  - name: "iface contributors"
+license: MIT
+repository-code: "https://github.com/liruanlin-beep/iface-linux"
+url: "https://github.com/liruanlin-beep/iface-linux/releases/tag/v3.0.1"
+abstract: >-
+  A Linux terminal assistant with shared command-line, numbered-menu and Python
+  interfaces for input preparation, structures, NEB preparation, convergence
+  scans, output inspection and explicit scheduler operations.
+keywords:
+  - VASP
+  - Linux
+  - computational materials science
+  - surface and interface models

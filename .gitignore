@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+build/
+dist/
+.env
+.env.*
+*.pem
+*.key
+*.p12
+.DS_Store
+geometry-demo/
+quick-input/
