@@ -129,6 +129,39 @@ def interface_score(
     return round(max(0.0, penalty), 6)
 
 
+def _trim_interface_atomic_layers(iface, substrate_layers, film_layers):
+    """Keep the requested atomic planes nearest the interface on each side."""
+    from pymatgen.core import Lattice
+    from pymatgen.core.interface import Interface
+
+    requested = {"substrate": int(substrate_layers), "film": int(film_layers)}
+    if min(requested.values()) < 1:
+        raise ValueError('Interface layer counts must be positive.')
+    labels = iface.site_properties["interface_label"]
+    # CoherentInterfaceBuilder aligns the surface normal with the Cartesian z axis.
+    heights = np.round(iface.cart_coords[:, 2], 6)
+    keep = []
+    for label, count in requested.items():
+        indices = [i for i, value in enumerate(labels) if value == label]
+        planes = sorted(set(heights[indices]))
+        if len(planes) < count:
+            raise ValueError(f'Insufficient atomic planes in {label}.')
+        selected = set(planes[-count:] if label == "substrate" else planes[:count])
+        keep.extend(i for i in indices if heights[i] in selected)
+    keep.sort()
+    coords = iface.cart_coords[keep].copy()
+    coords[:, 2] -= coords[:, 2].min()
+    matrix = iface.lattice.matrix.copy()
+    matrix[2] = [0., 0., float(coords[:, 2].max()) + 15.0]
+    return Interface(
+        lattice=Lattice(matrix), species=[iface.species[i] for i in keep],
+        coords=coords, coords_are_cartesian=True,
+        site_properties={key: [values[i] for i in keep] for key, values in iface.site_properties.items()},
+        in_plane_offset=iface.in_plane_offset, gap=iface.gap, vacuum_over_film=15.0,
+        interface_properties=iface.interface_properties.copy(),
+    )
+
+
 def search_interface_candidates(
     substrate,
     film,
@@ -207,6 +240,7 @@ def search_interface_candidates(
                 continue
             accepted_for_group = 0
             for raw_iface in interfaces:
+                raw_iface = _trim_interface_atomic_layers(raw_iface, substrate_layers, film_layers)
                 area = cross_section_area(raw_iface.lattice)
                 atoms = len(raw_iface)
                 if area > max_area or atoms > max_atoms:

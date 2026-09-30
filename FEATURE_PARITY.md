@@ -45,8 +45,12 @@ The independent source audit retained all 68 baseline application files, all
 987 original class/function/method declarations, and all 167 direct Tk command
 bindings. Original interactive controls and event bindings were preserved;
 layout containers and explanatory labels were adapted for English text. Scientific
-geometry, analysis and workflow implementations were retained; translations
-and platform integration are the changes. Automated baseline verification can
+geometry, analysis and workflow implementations were retained in 4.0.0.
+Version 4.0.1 corrects surface-normal geometry and atomic-layer counting in
+`slab_builder.py` and `interface_builder.py`. Their reviewed fingerprints are
+recorded separately; the original Windows baseline is not overwritten.
+All other audited computational modules retain their prior fingerprints.
+Automated baseline verification can
 be repeated with the included parity script and its embedded baseline fingerprints.
 
 The historical rc3 release manifest covers 64 Python files. Of the current

@@ -1,5 +1,18 @@
 # Changes
 
+## 4.0.1 — geometry correction
+
+- Define slab layers by projection onto the surface normal, then rotate the
+  exported surface plane into xy and apply the requested vacuum on each side.
+- Trim interface substrate and film to the requested number of atomic planes
+  adjacent to the interface, preserving the requested initial gap and 15 A
+  external vacuum. Previously, (100) Al interfaces could contain twice the
+  requested atomic planes because the underlying library uses unit planes.
+- Add coordinate-based regression coverage for 27 slab and 18 interface cases.
+  The Windows baseline remains recorded; two deliberate geometry corrections
+  are explicitly fingerprinted rather than described as unchanged algorithms.
+- Keep existing controls, presets, workflow stages and feature scope.
+
 ## 4.0.0 — 2026-09-28
 
 - Restore the complete original Windows desktop application on Linux:
