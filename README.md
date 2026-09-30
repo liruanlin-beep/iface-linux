@@ -1,5 +1,10 @@
 # iface for Linux
 
+> The current 4.0.1 source corrects surface-normal vacuum and atomic-plane
+> counting for slabs and interfaces. See [CHANGELOG](CHANGELOG.md) and
+> [validation](VALIDATION.md). The historical v4.0.0 release assets predate
+> these corrections; use the current source for corrected geometry.
+
 ## Illustrated user guide for version 4.0.0
 
 iface is a desktop application for building surface and interface structures, controlling the layer counts of materials A and B and their initial separation, preparing VASP inputs, managing calculations, and inspecting results. This guide describes the released software, with actual Linux screenshots and the button names shown in the English interface.

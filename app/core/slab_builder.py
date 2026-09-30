@@ -30,7 +30,9 @@ def cross_section_area(lattice):
 
 def _surface_species(slab):
     coords = slab.cart_coords
-    z = coords[:, 2]
+    normal = np.cross(slab.lattice.matrix[0], slab.lattice.matrix[1])
+    normal /= np.linalg.norm(normal)
+    z = coords @ normal
     top_z = z.max()
     bottom_z = z.min()
     top = sorted({str(slab.species[i].symbol) for i in range(len(slab)) if abs(z[i] - top_z) < 0.05})
@@ -86,7 +88,9 @@ def list_slab_terminations(structure, miller_index, scan_count=12):
 
 def _trim_to_layers(raw_slab, n_layers):
     coords = raw_slab.cart_coords
-    rounded_z = np.round(coords[:, 2], 6)
+    normal = np.cross(raw_slab.lattice.matrix[0], raw_slab.lattice.matrix[1])
+    normal /= np.linalg.norm(normal)
+    rounded_z = np.round(coords @ normal, 6)
     z_values = sorted(set(rounded_z))
     if len(z_values) <= n_layers:
         return raw_slab
@@ -100,16 +104,20 @@ def _trim_to_layers(raw_slab, n_layers):
 def _center_with_vacuum(slab, vacuum):
     from pymatgen.core import Lattice, Structure as PmgStructure
 
-    coords = slab.cart_coords.copy()
-    z_min = float(coords[:, 2].min())
-    z_max = float(coords[:, 2].max())
     a_vec = slab.lattice.matrix[0]
     b_vec = slab.lattice.matrix[1]
-    c_vec = slab.lattice.matrix[2]
-    c_dir = c_vec / np.linalg.norm(c_vec)
-    new_c = c_dir * ((z_max - z_min) + 2 * vacuum)
+    normal = np.cross(a_vec, b_vec)
+    normal /= np.linalg.norm(normal)
+    x_axis = a_vec / np.linalg.norm(a_vec)
+    basis = np.array([x_axis, np.cross(normal, x_axis), normal])
+    coords = slab.cart_coords @ basis.T
+    z_min = float(coords[:, 2].min())
+    z_max = float(coords[:, 2].max())
+    new_c = np.array([0.0, 0.0, (z_max - z_min) + 2 * vacuum])
     coords[:, 2] += vacuum - z_min
-    return PmgStructure(Lattice([a_vec, b_vec, new_c]), slab.species, coords, coords_are_cartesian=True)
+    return PmgStructure(Lattice([a_vec @ basis.T, b_vec @ basis.T, new_c]),
+                        slab.species, coords, coords_are_cartesian=True,
+                        site_properties=slab.site_properties)
 
 
 def generate_slab(structure, miller_index, n_layers=6, vacuum=15.0, termination_index=0):

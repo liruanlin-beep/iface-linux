@@ -1,4 +1,4 @@
-# Linux desktop validation — 4.0.0
+# Linux desktop validation — 4.0.1
 
 The local acceptance environment is Ubuntu 24.04 under WSL2, Python 3.12.3,
 Tk 8.6 and an Xvfb X11 display. Tests use a disposable Linux account and
@@ -7,12 +7,13 @@ isolated application data. Dependency versions are recorded in
 
 ## Regression and source retention
 
-- The complete suite runs 117 tests: 116 pass and one Windows-only DPAPI test
+- The complete suite runs 119 tests: 118 pass and one Windows-only DPAPI test
   is skipped on Linux. Linux secure storage has separate tests below.
 - Original tests remain present. English message assertions were updated;
   Unicode input fixtures and scientific assertions were retained.
 - The source-retention check covers all 68 original app files, 987 original
-  declarations, original controls/events/tests, 15 computational module ASTs,
+  declarations, original controls/events/tests, 15 computational module ASTs
+  (including two explicitly reviewed geometry corrections in 4.0.1),
   all 10 parameter presets and all 19 Agent tool names/risk classifications.
 - The only extra placeholder normalization permits English equivalents while
   requiring the original Chinese placeholder recognition to remain present.
@@ -25,6 +26,11 @@ xvfb-run -a python -m unittest discover -s tests -v
 ```
 
 ## Installed application acceptance
+
+Coordinate-based geometry regression now covers Al (100), (110) and (111)
+slabs at 4/6/8 atomic layers and 10/15/20 A vacuum per side (27 cases), plus
+18 Al/Al interface combinations with independent layer counts and 1.5/2.5/3.5 A
+initial gaps. All meet a 1e-6 A geometric tolerance after export and reload.
 
 The installed `iface --self-test` passes outside the source directory. It checks
 fresh configuration and data isolation; POSCAR/CIF import; supercell generation;

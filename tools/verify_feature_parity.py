@@ -23,6 +23,13 @@ COMPUTATIONAL_MODULES = (
     "task_preflight.py", "reliable_submission.py", "error_recovery.py",
 )
 
+# Explicit numerical corrections in 4.0.1, pinned independently of the Windows baseline.
+# Preserve the baseline fingerprints and reject any further unreviewed algorithm change.
+REVIEWED_GEOMETRY_CORRECTIONS = {
+    "slab_builder.py": "7be596730aca1fd86918ae366243223a94203efe922ce20be5712663c003d74b",
+    "interface_builder.py": "df8dd6c2a7c25b1142ce9c09e0c41a0ad9f2d72df6731690e87d053146f35572",
+}
+
 REVIEWED_LAYOUT_ADAPTATIONS = {
     "app/ui/dialogs.py": {
         "replaced": {"ttk.Frame": 1, "ttk.Label": 1},
@@ -172,6 +179,7 @@ def verify(root):
         if missing:
             failures.append({"test_module": name, "missing_original_tests": missing})
     for name, expected in BASELINE["algorithm_hashes"].items():
+        expected = REVIEWED_GEOMETRY_CORRECTIONS.get(name, expected)
         if current["algorithm_hashes"].get(name) != expected:
             failures.append({"changed_computational_logic": name})
     for key in ("agent_tools", "preset_values"):
@@ -192,6 +200,7 @@ def verify(root):
             "original_presets": len(BASELINE["preset_values"]), "original_agent_tools": len(BASELINE["agent_tools"]),
             "failures": failures, "callback_implementation_changes_for_review": changed_callbacks,
             "reviewed_layout_adaptations": layout_adaptations,
+            "reviewed_geometry_corrections": REVIEWED_GEOMETRY_CORRECTIONS,
             "accepted_localization_delta": "task_preflight: English placeholder synonyms are allowed only alongside all five original placeholder tokens.",
             "scope": "Static declarations, control counts, original test retention, computational ASTs, preset fixtures and tool risks. Run regression tests and desktop acceptance separately."}
 
